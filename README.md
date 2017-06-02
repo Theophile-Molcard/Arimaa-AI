@@ -1,2 +1,3 @@
-# IA02---Arimaa
-Projet d'IA02 - inteligence artificielle jeu Arimaa
+# Projet IA02 - Arimaa
+
+Développement d'une IA en Prolog
