@@ -31,45 +31,54 @@ get_moves( Moves, [Color, _], Board) :-
 get_moves( Moves, [Color, _], Board) :-
 	addMoves( Moves, [Color, _], Board, 1).
 
-addMoves( [Move], [Color, _], Board, 1) :-
-	get_move( Move, [Color, _], Board ).
+	
+addMoves( Moves, [Color, _], Board, N) :-
+	get_move( Move, [Color, _], Board, Cout ),
+	N_moins_cout is N - Cout,
+	N_moins_cout >= 0,
+	multiUpdateBoard( Move, Board, NewBoard),
+	addMoves( Moves_retour, [Color, _], NewBoard, N_moins_cout),
+	concat( Move, Moves_retour, Moves ).
+	
+addMoves( [], _, _, 0).
 
-addMoves( [Moves], [Color, _], Board, N) :-
-	N_moins_un is N-1,
-	get_move( Move, [Color, _], Board ),
-	updateBoard( Move, Board, NewBoard),
-	addMoves( Moves_retour, [Color, _], NewBoard, N_moins_un),
-	concat( [Move], Moves_retour, Moves ).
+
 
 
 % retournent des déplacement unitaires dans l'ordre de ce que l'on propose
 
-get_move( Move, [Color,_], Board) :-
+get_move( [Move], [Color,_], Board, 1) :-
 
 	% avance une piece random
 	getAlly( Type, Color, Board, Piece_retour),
 	avancePiece( Move, Piece_retour, Board).
 
-get_move( Move, [Color,_], Board) :-
+get_move( [Move], [Color,_], Board, 1) :-
 
 	% dernier recours
 	getAlly( Type, Color, Board, Piece_retour),
 	droitePiece( Move, Piece_retour, Board).
 
-get_move( Move, [Color,_], Board) :-
+get_move( [Move], [Color,_], Board, 1) :-
 
 	% dernier recours
 	getAlly( Type, Color, Board, Piece_retour),
 	gauchePiece( Move, Piece_retour, Board).
 	
 
-get_move( Move, [Color,_], Board) :-
+get_move( [Move], [Color,_], Board, 1) :-
 
 	% dernier recours
 	Type \= rabbit,
 	getAlly( Type, Color, Board, Piece_retour),
 	reculePiece( Move, Piece_retour, Board).
 
+multiUpdateBoard([], Board, Board).
+
+multiUpdateBoard([Move| Q], Board, UpdatedBoard) :-
+	updateBoard(Move, Board, TempBoard),
+	multiUpdateBoard( Q, TempBoard, UpdatedBoard).
+	
 
 % Mise à jour du plateau entre deux coups
 updateBoard([[X1, Y1],[X2, Y2]], Board, UpdatedBoard) :-
@@ -117,6 +126,7 @@ avancePiece( [[X, Y], [X_plus_un, Y]], [X, Y, Type, Color], Board ) :-
 	X_plus_un is X+1,
 	inBoard(X_plus_un, Y),
 	isFree([X_plus_un, Y], Board),
+	\+ trapForPiece(X_plus_un, Y, [X, Y, Type, Color], Board),
 	canMove([X, Y, Type, Color], Board).
 
 
@@ -125,6 +135,7 @@ droitePiece( [[X, Y], [X, Y_plus_un]], [X, Y, Type, Color], Board ) :-
 	Y_plus_un is Y+1,
 	inBoard(X, Y_plus_un),
 	isFree([X, Y_plus_un], Board),
+	\+ trapForPiece(X, Y_plus_un, [X, Y, Type, Color], Board),
 	canMove([X, Y, Type, Color], Board).
 
 
@@ -133,6 +144,7 @@ gauchePiece( [[X, Y], [X, Y_moins_un]], [X, Y, Type, Color], Board ) :-
 	Y_moins_un is Y-1,
 	inBoard(X, Y_moins_un),
 	isFree([X, Y_moins_un], Board),
+	\+ trapForPiece(X, Y_moins_un, [X, Y, Type, Color], Board),
 	canMove([X, Y, Type, Color], Board).
 
 
@@ -141,6 +153,7 @@ reculePiece( [[X, Y], [X_moins_un, Y]], [X, Y, Type, Color], Board ) :-
 	X_moins_un is X-1,
 	inBoard(X_moins_un, Y),
 	isFree([X_moins_un, Y], Board),
+	\+ trapForPiece(X_moins_un, Y, [X, Y, Type, Color], Board),
 	canMove([X, Y, Type, Color], Board).
 
 % retourne un alié (on peut choisir le type la couleur)
