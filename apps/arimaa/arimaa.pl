@@ -92,7 +92,7 @@ trapForPiece( X_trap, Y_trap, [X, Y, _, Color], Board) :-
 	trap( X_trap, Y_trap ),
 	getNeighbour( [X_trap, Y_trap ,_ ,_], Board, Voisins ),
 	retire([X, Y, _, Color], Voisins, Voisins_sans_piece),
-	getAlly( _, Color, Voisins_sans_piece, []).
+	\+ getAlly(_, Color, Voisins_sans_piece, _).
 
 
 % détruit toutes les pièces qui doivent l'être sur le plateau
@@ -121,7 +121,7 @@ trap(5, 5).
 
 
 
-% retourne toutes les possibilités de déplacement d'une pièce
+% fait avancer une piece aléatoire du plateau
 avancePiece( [[X, Y], [X_plus_un, Y]], [X, Y, Type, Color], Board ) :-
 	X_plus_un is X+1,
 	inBoard(X_plus_un, Y),
@@ -130,7 +130,7 @@ avancePiece( [[X, Y], [X_plus_un, Y]], [X, Y, Type, Color], Board ) :-
 	canMove([X, Y, Type, Color], Board).
 
 
-% retourne toutes les possibilités de déplacement d'une pièce
+% fait aller à droite une piece aléatoire du plateau
 droitePiece( [[X, Y], [X, Y_plus_un]], [X, Y, Type, Color], Board ) :-
 	Y_plus_un is Y+1,
 	inBoard(X, Y_plus_un),
@@ -139,7 +139,7 @@ droitePiece( [[X, Y], [X, Y_plus_un]], [X, Y, Type, Color], Board ) :-
 	canMove([X, Y, Type, Color], Board).
 
 
-% retourne toutes les possibilités de déplacement d'une pièce
+% fait aller à gauche une piece aléatoire du plateau
 gauchePiece( [[X, Y], [X, Y_moins_un]], [X, Y, Type, Color], Board ) :-
 	Y_moins_un is Y-1,
 	inBoard(X, Y_moins_un),
