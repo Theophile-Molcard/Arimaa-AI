@@ -36,16 +36,31 @@ addMoves( Moves, [Color, _], Board, N) :-
 	get_move( Move, [Color, _], Board, Cout ),
 	N_moins_cout is N - Cout,
 	N_moins_cout >= 0,
-	multiUpdateBoard( Move, Board, NewBoard),
+	multiUpdateBoard( Move, Board, NewBoard, Piece_mortes_retour),
+	mortAlly(Piece_mortes_retour, Color),
 	addMoves( Moves_retour, [Color, _], NewBoard, N_moins_cout),
 	concat( Move, Moves_retour, Moves ).
 	
 addMoves( [], _, _, 0).
 
-
+mortAlly([], _).
+mortAlly([[]|Q], Color):-
+	mortAlly(Q, Color).
+mortAlly([[_, _, _, Color_enemie]|Q], Color):-
+	Color \= Color_enemie,
+	mortAlly(Q, Color).
+	
 
 
 % retournent des déplacement unitaires dans l'ordre de ce que l'on propose
+
+
+
+get_move( Move, [Color,_], Board, 2) :-
+
+	% tue une piece adverse
+	getAlly( Type, Color, Board, Piece_retour),
+	tuePiece( Move, Piece_retour, Board).
 
 get_move( [Move], [Color,_], Board, 1) :-
 
@@ -79,18 +94,18 @@ get_move( [Move], [Color,_], Board, 1) :-
 	getAlly( Type, Color, Board, Piece_retour),
 	reculePiece( Move, Piece_retour, Board).
 
-multiUpdateBoard([], Board, Board).
+multiUpdateBoard([], Board, Board, []).
 
-multiUpdateBoard([Move| Q], Board, UpdatedBoard) :-
-	updateBoard(Move, Board, TempBoard),
-	multiUpdateBoard( Q, TempBoard, UpdatedBoard).
+multiUpdateBoard([Move| Q], Board, UpdatedBoard, [Piece_morte | Piece_mortes_retour]) :-
+	updateBoard(Move, Board, TempBoard, Piece_morte),
+	multiUpdateBoard( Q, TempBoard, UpdatedBoard, Piece_mortes_retour).
 	
 
 % Mise à jour du plateau entre deux coups
-updateBoard([[X1, Y1],[X2, Y2]], Board, UpdatedBoard) :-
+updateBoard([[X1, Y1],[X2, Y2]], Board, UpdatedBoard, Piece_morte) :-
 	element([X1, Y1, Type, Color], Board ),
 	retire([X1, Y1, Type, Color], Board, TempBoard),
-	detruitPieces([[X2, Y2, Type, Color]|TempBoard], [[X2, Y2, Type, Color]|TempBoard], UpdatedBoard).
+	detruitPieces([[X2, Y2, Type, Color]|TempBoard], [[X2, Y2, Type, Color]|TempBoard], UpdatedBoard, Piece_morte).
 
 
 % Savoir si une case est une trape pour une pièce donnée
@@ -102,14 +117,14 @@ trapForPiece( X_trap, Y_trap, [X, Y, _, Color], Board) :-
 
 
 % détruit toutes les pièces qui doivent l'être sur le plateau
-detruitPieces([T|Q], Board, BoardUpdated) :-
+detruitPieces([T|Q], Board, BoardUpdated, T) :-
 	isTrapped(T, Board ), !,
 	retire(T, Board, BoardUpdated).
 
-detruitPieces([_|Q], Board, BoardUpdated) :-
-	detruitPieces( Q, Board, BoardUpdated).
+detruitPieces([_|Q], Board, BoardUpdated, Y) :-
+	detruitPieces( Q, Board, BoardUpdated, Y).
 
-detruitPieces([], Board, Board).
+detruitPieces([], Board, Board, []).
 	
 	
 	
@@ -151,10 +166,29 @@ poussePiece( [Move_enemie, [[X, Y],[X_plus_un, Y]]], [X, Y, Type, Color], Board 
 	\+ trapForPiece(X_plus_un, Y, [X, Y, Type, Color], Board),
 	element([X_plus_un, Y, Type_enemie, Color_enemie], Board),
 	Color_enemie \= Color,
-	Type_enemie \= rabbit;
+	Type_enemie \= rabbit,
 	isWeaker(Type_enemie, Type),
 	bougePieceEnemie(Move_enemie, [X_plus_un, Y, Type_enemie, Color_enemie], Board).
 
+
+% fait avancer une piece aléatoire du plateau
+tuePiece( [[PosEnemie,PosPiege], [[X, Y],PosEnemie]], [X, Y, Type, Color], Board ) :-
+	Type \= rabbit,
+	canMove([X, Y, Type, Color], Board),
+	getNeighbour([X, Y, Type, Color], Board, Voisins),
+	isVulnerable([X, Y, Type, Color], Voisins, Board, PosEnemie, PosPiege).
+
+isVulnerable([X, Y, Type, Color], [[X_enemie, Y_enemie, Type_enemie, Color_enemie]|_], Board, [X_enemie, Y_enemie], [X_v_e, Y_v_e]) :-
+	Color_enemie \= Color,
+	isWeaker(Type_enemie, Type),
+	neighbour( X_enemie, Y_enemie, X_v_e, Y_v_e ),
+	trap(X_v_e, Y_v_e),
+	isFree([X_v_e, Y_v_e], Board),
+	trapForPiece(X_v_e, Y_v_e, [X_enemie, Y_enemie, Type_enemie, Color_enemie], Board), !.
+
+isVulnerable( Piece, [_|Q], Board, Piece_enemie, Piege) :-
+	isVulnerable( Piece, Q, Board, Piece_enemie, Piege).
+	
 
 % fait aller à droite une piece aléatoire du plateau
 droitePiece( [[X, Y], [X, Y_plus_un]], [X, Y, Type, Color], Board ) :-
