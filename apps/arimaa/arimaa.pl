@@ -52,6 +52,12 @@ get_move( [Move], [Color,_], Board, 1) :-
 	% avance une piece random
 	getAlly( Type, Color, Board, Piece_retour),
 	avancePiece( Move, Piece_retour, Board).
+	
+get_move( Move, [Color,_], Board, 2) :-
+
+	% pousse une piece random
+	getAlly( Type, Color, Board, Piece_retour),
+	poussePiece( Move, Piece_retour, Board).
 
 get_move( [Move], [Color,_], Board, 1) :-
 
@@ -128,6 +134,26 @@ avancePiece( [[X, Y], [X_plus_un, Y]], [X, Y, Type, Color], Board ) :-
 	isFree([X_plus_un, Y], Board),
 	\+ trapForPiece(X_plus_un, Y, [X, Y, Type, Color], Board),
 	canMove([X, Y, Type, Color], Board).
+
+% fait avancer une piece aléatoire du plateau
+bougePieceEnemie( [[X, Y], [X_voisin, Y_voisin]], [X, Y, _, _], Board ) :-
+	neighbour(X, Y, X_voisin, Y_voisin), 
+	inBoard(X_voisin, Y_voisin),
+	isFree([X_voisin, Y_voisin], Board).
+
+
+
+% fait avancer une piece aléatoire du plateau
+poussePiece( [Move_enemie, [[X, Y],[X_plus_un, Y]]], [X, Y, Type, Color], Board ) :-
+	X_plus_un is X+1,
+	inBoard(X_plus_un, Y),
+	canMove([X, Y, Type, Color], Board),
+	\+ trapForPiece(X_plus_un, Y, [X, Y, Type, Color], Board),
+	element([X_plus_un, Y, Type_enemie, Color_enemie], Board),
+	Color_enemie \= Color,
+	Type_enemie \= rabbit;
+	isWeaker(Type_enemie, Type),
+	bougePieceEnemie(Move_enemie, [X_plus_un, Y, Type_enemie, Color_enemie], Board).
 
 
 % fait aller à droite une piece aléatoire du plateau
