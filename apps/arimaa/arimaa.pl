@@ -56,10 +56,42 @@ mortAlly([[_, _, _, Color_enemie]|Q], Color):-
 
 
 
+get_move( Move, [Color,_], Board, 1) :-
+
+	% gagne en 1 coup
+	getAlly( Type, Color, Board, [6, Y, Type, Color]),
+	Type = rabbit,
+	gagne( Move, [X, Y, rabbit, Color], Board, 1).
+	
+get_move( Move, [Color,_], Board, 2) :-
+
+	% gagne en 2 coup
+	getAlly( Type, Color, Board, [X, Y, Type, Color]),
+	Type = rabbit,
+	X >= 5,
+	gagne( Move, [X, Y, rabbit, Color], Board, 2).
+	
+get_move( Move, [Color,_], Board, 3) :-
+
+	% gagne en 3 coup
+	getAlly( Type, Color, Board, [X, Y, Type, Color]),
+	Type = rabbit,
+	X >= 4,
+	gagne( Move, [X, Y, rabbit, Color], Board, 3).
+	
+get_move( Move, [Color,_], Board, 4) :-
+
+	% gagne en 4 coup
+	getAlly( Type, Color, Board, [X, Y, Type, Color]),
+	Type = rabbit,
+	X >= 3,
+	gagne( Move, [X, Y, rabbit, Color], Board, 4).
+
 get_move( Move, [Color,_], Board, 2) :-
 
 	% tue une piece adverse
 	getAlly( Type, Color, Board, Piece_retour),
+	Type \= rabbit,
 	tuePiece( Move, Piece_retour, Board).
 
 get_move( [Move], [Color,_], Board, 1) :-
@@ -72,6 +104,7 @@ get_move( Move, [Color,_], Board, 2) :-
 
 	% pousse une piece random
 	getAlly( Type, Color, Board, Piece_retour),
+	Type \= rabbit,
 	poussePiece( Move, Piece_retour, Board).
 
 get_move( [Move], [Color,_], Board, 1) :-
@@ -141,6 +174,58 @@ trap(5, 2).
 trap(5, 5).
 
 
+abs(X, X) :-
+	X >= 0, !.
+
+abs(X, Moins_X) :-
+	Moins_X is -X.
+	
+gagne( [[[6, Y], [7, Y]]], [6, Y, rabbit, Color], Board, Coup_restant) :-
+	Coup_restant > 0,
+	avancePiece([[6, Y], [7, Y]], [6, Y, rabbit, Color], Board), !.
+
+gagne( [[[X, Y], [X_plus_un, Y]]| Move], [X, Y, rabbit, Color], Board, Coup_restant) :-
+	bordureEnemie(X_gagne, Y_gagne, Color),
+	isFree([X_gagne, Y_gagne], Board),
+	Delta_X is 7 - X,
+	Dif_Y is Y - Y_gagne,
+	abs(Dif_Y, Delta_Y),
+	Somme is Delta_X + Delta_Y,
+	Somme =< Coup_restant,
+	avancePiece([[X, Y], [X_plus_un, Y]], [X, Y, rabbit, Color], Board),
+	updateBoard([[X, Y], [X_plus_un, Y]], Board, UpdatedBoard, _),
+	Coup_restant_moins_un is Coup_restant - 1,
+	gagne( Move, [X_plus_un, Y, rabbit, Color], UpdatedBoard, Coup_restant_moins_un).	
+	
+gagne( [[[X, Y], [X, Y_plus_un]]| Move], [X, Y, rabbit, Color], Board, Coup_restant) :-
+	bordureEnemie(X_gagne, Y_gagne, Color),
+	isFree([X_gagne, Y_gagne], Board),
+	Delta_X is 7 - X,
+	Dif_Y is Y - Y_gagne,
+	abs(Dif_Y, Delta_Y),
+	Somme is Delta_X + Delta_Y,
+	Somme =< Coup_restant,
+	Delta_X < Coup_restant,
+	droitePiece([[X, Y], [X, Y_plus_un]], [X, Y, rabbit, Color], Board),
+	Coup_restant_moins_un is Coup_restant - 1,
+	updateBoard([[X, Y], [X_plus_un, Y]], Board, UpdatedBoard, _),
+	gagne( Move, [X, Y_plus_un, rabbit, Color], UpdatedBoard, Coup_restant_moins_un).	
+	
+gagne( [[[X, Y], [X, Y_moins_un]]| Move], [X, Y, rabbit, Color], Board, Coup_restant) :-
+	bordureEnemie(X_gagne, Y_gagne, Color),
+	isFree([X_gagne, Y_gagne], Board),
+	Delta_X is 7 - X,
+	Dif_Y is Y - Y_gagne,
+	abs(Dif_Y, Delta_Y),
+	Somme is Delta_X + Delta_Y,
+	Somme =< Coup_restant,
+	Delta_X < Coup_restant,
+	gauchePiece([[X, Y], [X, Y_moins_un]], [X, Y, rabbit, Color], Board),
+	Coup_restant_moins_un is Coup_restant - 1,
+	updateBoard([[X, Y], [X_plus_un, Y]], Board, UpdatedBoard, _),
+	gagne( Move, [X, Y_moins_un, rabbit, Color], UpdatedBoard, Coup_restant_moins_un).
+	
+
 
 % fait avancer une piece aléatoire du plateau
 avancePiece( [[X, Y], [X_plus_un, Y]], [X, Y, Type, Color], Board ) :-
@@ -166,14 +251,12 @@ poussePiece( [Move_enemie, [[X, Y],[X_plus_un, Y]]], [X, Y, Type, Color], Board 
 	\+ trapForPiece(X_plus_un, Y, [X, Y, Type, Color], Board),
 	element([X_plus_un, Y, Type_enemie, Color_enemie], Board),
 	Color_enemie \= Color,
-	Type_enemie \= rabbit,
 	isWeaker(Type_enemie, Type),
 	bougePieceEnemie(Move_enemie, [X_plus_un, Y, Type_enemie, Color_enemie], Board).
 
 
 % fait avancer une piece aléatoire du plateau
 tuePiece( [[PosEnemie,PosPiege], [[X, Y],PosEnemie]], [X, Y, Type, Color], Board ) :-
-	Type \= rabbit,
 	canMove([X, Y, Type, Color], Board),
 	getNeighbour([X, Y, Type, Color], Board, Voisins),
 	isVulnerable([X, Y, Type, Color], Voisins, Board, PosEnemie, PosPiege).
@@ -299,3 +382,22 @@ getNeighbour( Piece, [ _ | Q ], Voisins) :-
 	getNeighbour( Piece, Q, Voisins).
 	
 getNeighbour( _ , [], []).
+
+
+bordureEnemie(7, 0, silver).
+bordureEnemie(7, 1, silver).
+bordureEnemie(7, 2, silver).
+bordureEnemie(7, 3, silver).
+bordureEnemie(7, 4, silver).
+bordureEnemie(7, 5, silver).
+bordureEnemie(7, 6, silver).
+bordureEnemie(7, 7, silver).
+
+bordureEnemie(0, 0, gold).
+bordureEnemie(0, 1, gold).
+bordureEnemie(0, 2, gold).
+bordureEnemie(0, 3, gold).
+bordureEnemie(0, 4, gold).
+bordureEnemie(0, 5, gold).
+bordureEnemie(0, 6, gold).
+bordureEnemie(0, 7, gold).
