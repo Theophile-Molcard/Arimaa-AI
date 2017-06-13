@@ -180,8 +180,7 @@ abs(X, X) :-
 abs(X, Moins_X) :-
 	Moins_X is -X.
 	
-gagne( [[[6, Y], [7, Y]]], [6, Y, rabbit, Color], Board, Coup_restant) :-
-	Coup_restant > 0,
+gagne( [[[6, Y], [7, Y]]], [6, Y, rabbit, Color], Board, 1) :-
 	avancePiece([[6, Y], [7, Y]], [6, Y, rabbit, Color], Board), !.
 
 gagne( [[[X, Y], [X_plus_un, Y]]| Move], [X, Y, rabbit, Color], Board, Coup_restant) :-
@@ -208,7 +207,7 @@ gagne( [[[X, Y], [X, Y_plus_un]]| Move], [X, Y, rabbit, Color], Board, Coup_rest
 	Delta_X < Coup_restant,
 	droitePiece([[X, Y], [X, Y_plus_un]], [X, Y, rabbit, Color], Board),
 	Coup_restant_moins_un is Coup_restant - 1,
-	updateBoard([[X, Y], [X_plus_un, Y]], Board, UpdatedBoard, _),
+	updateBoard([[X, Y], [X, Y_plus_un]], Board, UpdatedBoard, _),
 	gagne( Move, [X, Y_plus_un, rabbit, Color], UpdatedBoard, Coup_restant_moins_un).	
 	
 gagne( [[[X, Y], [X, Y_moins_un]]| Move], [X, Y, rabbit, Color], Board, Coup_restant) :-
@@ -222,7 +221,7 @@ gagne( [[[X, Y], [X, Y_moins_un]]| Move], [X, Y, rabbit, Color], Board, Coup_res
 	Delta_X < Coup_restant,
 	gauchePiece([[X, Y], [X, Y_moins_un]], [X, Y, rabbit, Color], Board),
 	Coup_restant_moins_un is Coup_restant - 1,
-	updateBoard([[X, Y], [X_plus_un, Y]], Board, UpdatedBoard, _),
+	updateBoard([[X, Y], [X, Y_moins_un]], Board, UpdatedBoard, _),
 	gagne( Move, [X, Y_moins_un, rabbit, Color], UpdatedBoard, Coup_restant_moins_un).
 	
 
