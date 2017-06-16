@@ -59,64 +59,60 @@ mortAlly([[_, _, _, Color_enemie]|Q], Color):-
 get_move( Move, [Color,_], Board, 1) :-
 
 	% gagne en 1 coup
-	getAlly( Type, Color, Board, [6, Y, Type, Color]),
-	Type = rabbit,
-	gagne( Move, [X, Y, rabbit, Color], Board, 1).
+	getAlly( 6, _, rabbit, Color, Board, Piece_retour),
+	gagne( Move, Piece_retour, Board, 1).
 	
 get_move( Move, [Color,_], Board, 2) :-
 
 	% gagne en 2 coup
-	getAlly( Type, Color, Board, [X, Y, Type, Color]),
-	Type = rabbit,
+	getAlly( X, _, rabbit, Color, Board, Piece_retour),
 	X >= 5,
-	gagne( Move, [X, Y, rabbit, Color], Board, 2).
+	gagne( Move, Piece_retour, Board, 2).
 	
 get_move( Move, [Color,_], Board, 3) :-
 
 	% gagne en 3 coup
-	getAlly( Type, Color, Board, [X, Y, Type, Color]),
-	Type = rabbit,
+	getAlly( X, _, rabbit, Color, Board, Piece_retour),
 	X >= 4,
-	gagne( Move, [X, Y, rabbit, Color], Board, 3).
+	gagne( Move, Piece_retour, Board, 3).
 	
 get_move( Move, [Color,_], Board, 4) :-
 
 	% gagne en 4 coup
-	getAlly( Type, Color, Board, [X, Y, Type, Color]),
-	Type = rabbit,
+	getAlly( X, _, rabbit, Color, Board, Piece_retour),
 	X >= 3,
-	gagne( Move, [X, Y, rabbit, Color], Board, 4).
+	gagne( Move, Piece_retour, Board, 4).
 
 get_move( Move, [Color,_], Board, 2) :-
 
 	% tue une piece adverse
-	getAlly( Type, Color, Board, Piece_retour),
+	getAlly( _, _, Type, Color, Board, Piece_retour),
 	Type \= rabbit,
 	tuePiece( Move, Piece_retour, Board).
 
 get_move( [Move], [Color,_], Board, 1) :-
 
 	% avance une piece random
-	getAlly( Type, Color, Board, Piece_retour),
+	getAlly( _, _, Type, Color, Board, Piece_retour),
 	avancePiece( Move, Piece_retour, Board).
 	
 get_move( Move, [Color,_], Board, 2) :-
 
 	% pousse une piece random
-	getAlly( Type, Color, Board, Piece_retour),
+	getAlly( _, _, Type, Color, Board, Piece_retour),
 	Type \= rabbit,
 	poussePiece( Move, Piece_retour, Board).
 
 get_move( [Move], [Color,_], Board, 1) :-
 
 	% dernier recours
-	getAlly( Type, Color, Board, Piece_retour),
+	getAlly( _, _, Type, Color, Board, Piece_retour),
 	droitePiece( Move, Piece_retour, Board).
 
 get_move( [Move], [Color,_], Board, 1) :-
 
 	% dernier recours
-	getAlly( Type, Color, Board, Piece_retour),
+	getAlly( _, _, Type, Color, Board, Piece_retour),
 	gauchePiece( Move, Piece_retour, Board).
 	
 
@@ -124,7 +120,7 @@ get_move( [Move], [Color,_], Board, 1) :-
 
 	% dernier recours
 	Type \= rabbit,
-	getAlly( Type, Color, Board, Piece_retour),
+	getAlly( _, _, Type, Color, Board, Piece_retour),
 	reculePiece( Move, Piece_retour, Board).
 
 multiUpdateBoard([], Board, Board, []).
@@ -146,7 +142,7 @@ trapForPiece( X_trap, Y_trap, [X, Y, _, Color], Board) :-
 	trap( X_trap, Y_trap ),
 	getNeighbour( [X_trap, Y_trap ,_ ,_], Board, Voisins ),
 	retire([X, Y, _, Color], Voisins, Voisins_sans_piece),
-	\+ getAlly(_, Color, Voisins_sans_piece, _).
+	\+ getAlly( _, _, _, Color, Voisins_sans_piece, _).
 
 
 % détruit toutes les pièces qui doivent l'être sur le plateau
@@ -166,7 +162,7 @@ detruitPieces([], Board, Board, []).
 isTrapped([X, Y, _, Color], Board) :-
 	trap(X, Y),
 	getNeighbour([X, Y, _, Color], Board, Voisins),
-	\+ getAlly(_, Color, Voisins, _).
+	\+ getAlly( _, _, _, Color, Voisins, _).
 
 trap(2, 2).
 trap(2, 5).
@@ -186,6 +182,7 @@ gagne( [[[6, Y], [7, Y]]], [6, Y, rabbit, Color], Board, 1) :-
 gagne( [[[X, Y], [X_plus_un, Y]]| Move], [X, Y, rabbit, Color], Board, Coup_restant) :-
 	bordureEnemie(X_gagne, Y_gagne, Color),
 	isFree([X_gagne, Y_gagne], Board),
+	% print(X),
 	Delta_X is 7 - X,
 	Dif_Y is Y - Y_gagne,
 	abs(Dif_Y, Delta_Y),
@@ -300,14 +297,9 @@ reculePiece( [[X, Y], [X_moins_un, Y]], [X, Y, Type, Color], Board ) :-
 
 % retourne un alié (on peut choisir le type la couleur)
 
-getAlly( Type, Color, [T|Q], Piece_retour) :-
-	T \= [_, _, Type, Color],
-	getAlly( Type, Color, Q, Piece_retour).
+getAlly( X, Y, Type, Color, [[X, Y, Type, Color]|_], [X, Y, Type, Color]).
 	
-getAlly( Type, Color, [[X, Y, Type, Color]|_], [X, Y, Type, Color]).
-	
-getAlly( Type, Color, [T|Q], Piece_retour) :-
-	getAlly( Type, Color, Q, Piece_retour).
+getAlly( X, Y, Type, Color, [_|Q], Piece_retour) :- getAlly( X, Y, Type, Color, Q, Piece_retour).
 
 
 % coordonnées sont sur le plateau
