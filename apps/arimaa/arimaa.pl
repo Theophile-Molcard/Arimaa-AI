@@ -18,8 +18,11 @@
 
 % On essait toujours de faire le plus de déplacements possible
 
+:- dynamic last_move/1.
+
 
 get_moves( Moves, [Color, _], Board) :-
+	asserta(last_move([[0,0],[0,0]])),
 	addMoves( Moves, [Color,_], Board, 4).
 
 get_moves( Moves, [Color, _], Board) :-
@@ -90,10 +93,60 @@ get_move( Move, [Color,_], Board, 2) :-
 	Type \= rabbit,
 	tuePiece( Move, Piece_retour, Board).
 
+	
+% get_move( [Move], [Color,_], Board, 1) :-
+
+	% avance une piece random
+	% getAlly( _, _, Type, Color, Board, [X, Y, Type, Color]),
+	% avancePiece( Move, [X, Y, Type, Color], Board),
+	% retire([X, Y, Type, Color], Board, NewBoard),
+	% X_plus_un is X + 1,
+	% canMove([X_plus_un, Y, Type, Color], NewBoard).
+	
+% get_move( Move, [Color,_], Board, 2) :-
+
+	% pousse une piece random
+	% getAlly( _, _, Type, Color, Board, [X, Y, Type, Color]),
+	% Type \= rabbit,
+	% poussePiece( Move, [X, Y, Type, Color], Board),
+	% retire([X, Y, Type, Color], Board, NewBoard),
+	% X_plus_un is X + 1,
+	% canMove([X_plus_un, Y, Type, Color], NewBoard).
+
+% get_move( [Move], [Color,_], Board, 1) :-
+
+	% dernier recours
+	% getAlly( X, Y, Type, Color, Board, [X, Y, Type, Color]),
+	% droitePiece( Move, [X, Y, Type, Color], Board),
+	% retire([X, Y, Type, Color], Board, NewBoard),
+	% Y_plus_un is Y + 1,
+	% canMove([X, Y_plus_un, Type, Color], NewBoard).
+
+% get_move( [Move], [Color,_], Board, 1) :-
+
+	% dernier recours
+	% getAlly( _, _, Type, Color, Board, [X, Y, Type, Color]),
+	% gauchePiece( Move, [X, Y, Type, Color], Board),
+	% retire([X, Y, Type, Color], Board, NewBoard),
+	% Y_moins_un is Y - 1,
+	% canMove([X, Y_moins_un, Type, Color], NewBoard).
+	
+
+% get_move( [Move], [Color,_], Board, 1) :-
+
+	% dernier recours
+	% Type \= rabbit,
+	% getAlly( _, _, Type, Color, Board, [X, Y, Type, Color]),
+	% reculePiece( Move, [X, Y, Type, Color], Board),
+	% retire([X, Y, Type, Color], Board, NewBoard),
+	% X_moins_un is X - 1,
+	% canMove([X_moins_un, Y, Type, Color], NewBoard).
+
 get_move( [Move], [Color,_], Board, 1) :-
 
 	% avance une piece random
-	getAlly( _, _, Type, Color, Board, Piece_retour),
+	getAlly( X, _, _, Color, Board, Piece_retour), % de toute façon pas un lapin sinon il aurait gagné
+	X \= 6,
 	avancePiece( Move, Piece_retour, Board).
 	
 get_move( Move, [Color,_], Board, 2) :-
@@ -106,13 +159,13 @@ get_move( Move, [Color,_], Board, 2) :-
 get_move( [Move], [Color,_], Board, 1) :-
 
 	% dernier recours
-	getAlly( _, _, Type, Color, Board, Piece_retour),
+	getAlly( _, _, _, Color, Board, Piece_retour),
 	droitePiece( Move, Piece_retour, Board).
 
 get_move( [Move], [Color,_], Board, 1) :-
 
 	% dernier recours
-	getAlly( _, _, Type, Color, Board, Piece_retour),
+	getAlly( _, _, _, Color, Board, Piece_retour),
 	gauchePiece( Move, Piece_retour, Board).
 	
 
@@ -131,10 +184,34 @@ multiUpdateBoard([Move| Q], Board, UpdatedBoard, [Piece_morte | Piece_mortes_ret
 	
 
 % Mise à jour du plateau entre deux coups
+% place pièce jouée en arrière plan
 updateBoard([[X1, Y1],[X2, Y2]], Board, UpdatedBoard, Piece_morte) :-
+	last_move(LM),
+	LM \= [[X2, Y2],[X1, Y1]],
+	retract(last_move(LM)),	
+	asserta(last_move([[X1, Y1],[X2, Y2]])),
+	element([X1, Y1, Type, Color], Board ),
+	retire([X1, Y1, Type, Color], Board, [T| Q]), !,
+	detruitPieces([[X2, Y2, Type, Color]|[T| Q]], [T, [X2, Y2, Type, Color]|Q], UpdatedBoard, Piece_morte).
+
+% update simple, place dernière pièce jouée à la fin si repetitions
+updateBoard([[X1, Y1],[X2, Y2]], Board, UpdatedBoard, Piece_morte) :-
+	last_move(LM),
+	LM \= [[X2, Y2],[X1, Y1]],
+	retract(last_move(LM)),	
+	asserta(last_move([[X1, Y1],[X2, Y2]])),
 	element([X1, Y1, Type, Color], Board ),
 	retire([X1, Y1, Type, Color], Board, TempBoard),
 	detruitPieces([[X2, Y2, Type, Color]|TempBoard], [[X2, Y2, Type, Color]|TempBoard], UpdatedBoard, Piece_morte).
+
+% update simple dernier cas
+% updateBoard([[X1, Y1],[X2, Y2]], Board, UpdatedBoard, Piece_morte) :-
+	% last_move(LM),
+	% retract(last_move(LM)),	
+	% asserta(last_move([[X1, Y1],[X2, Y2]])),
+	% element([X1, Y1, Type, Color], Board ),
+	% retire([X1, Y1, Type, Color], Board, TempBoard),
+	% detruitPieces([[X2, Y2, Type, Color]|TempBoard], [[X2, Y2, Type, Color]|TempBoard], UpdatedBoard, Piece_morte).
 
 
 % Savoir si une case est une trape pour une pièce donnée
@@ -146,7 +223,7 @@ trapForPiece( X_trap, Y_trap, [X, Y, _, Color], Board) :-
 
 
 % détruit toutes les pièces qui doivent l'être sur le plateau
-detruitPieces([T|Q], Board, BoardUpdated, T) :-
+detruitPieces([T|_], Board, BoardUpdated, T) :-
 	isTrapped(T, Board ), !,
 	retire(T, Board, BoardUpdated).
 
@@ -257,7 +334,7 @@ tuePiece( [[PosEnemie,PosPiege], [[X, Y],PosEnemie]], [X, Y, Type, Color], Board
 	getNeighbour([X, Y, Type, Color], Board, Voisins),
 	isVulnerable([X, Y, Type, Color], Voisins, Board, PosEnemie, PosPiege).
 
-isVulnerable([X, Y, Type, Color], [[X_enemie, Y_enemie, Type_enemie, Color_enemie]|_], Board, [X_enemie, Y_enemie], [X_v_e, Y_v_e]) :-
+isVulnerable([_, _, Type, Color], [[X_enemie, Y_enemie, Type_enemie, Color_enemie]|_], Board, [X_enemie, Y_enemie], [X_v_e, Y_v_e]) :-
 	Color_enemie \= Color,
 	isWeaker(Type_enemie, Type),
 	neighbour( X_enemie, Y_enemie, X_v_e, Y_v_e ),
