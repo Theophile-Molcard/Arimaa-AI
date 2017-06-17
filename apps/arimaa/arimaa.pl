@@ -191,8 +191,9 @@ updateBoard([[X1, Y1],[X2, Y2]], Board, UpdatedBoard, Piece_morte) :-
 	retract(last_move(LM)),	
 	asserta(last_move([[X1, Y1],[X2, Y2]])),
 	element([X1, Y1, Type, Color], Board ),
-	retire([X1, Y1, Type, Color], Board, [T| Q]), !,
-	detruitPieces([[X2, Y2, Type, Color]|[T| Q]], [T, [X2, Y2, Type, Color]|Q], UpdatedBoard, Piece_morte).
+	retire([X1, Y1, Type, Color], Board, TempBoard), !,
+	concat(TempBoard, [[X2, Y2, Type, Color]], TempBoard2),
+	detruitPieces(TempBoard2, TempBoard2, UpdatedBoard, Piece_morte).
 
 % update simple, place dernière pièce jouée à la fin si repetitions
 updateBoard([[X1, Y1],[X2, Y2]], Board, UpdatedBoard, Piece_morte) :-
