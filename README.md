@@ -1,3 +1,3 @@
 # Projet IA02 - Arimaa
 
-Développement d'une IA en Prolog
+Artificial Iteligence playing Arimaa using Prolog.
